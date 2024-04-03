@@ -209,14 +209,15 @@ example (h: 0 ≤ b - a) : a ≤ b := by
   exact t
 
 example (h : a ≤ b) (h' : 0 ≤ c) : a * c ≤ b * c := by
-  have t₁-a + a ≤ -a + b := add_le_add_left h (-a)
-  rw [add_comm, add_neg_self] at t
-  rw [add_comm, ← sub_eq_add_neg] at t
-
-
-
-
-
+  have t₁: -a + a ≤ -a + b := add_le_add_left h (-a)
+  rw [add_comm, add_neg_self] at t₁
+  rw [add_comm, ← sub_eq_add_neg] at t₁
+  have t₂: 0 ≤ (b - a) * c := mul_nonneg h t₁
+  rw [sub_mul] at t₂
+  have t: a * c + 0 ≤ a * c + (b * c - a * c) := add_le_add_left t₂ (a * c)
+  rw [add_zero, add_sub] at t
+  rw [add_comm, ← add_sub, sub_self, add_zero] at t
+  exact t
 end
 
 section
