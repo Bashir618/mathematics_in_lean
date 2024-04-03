@@ -75,13 +75,39 @@ example : x ⊔ y = y ⊔ x := by
     · exact le_sup_left
 
 example : x ⊔ y ⊔ z = x ⊔ (y ⊔ z) := by
-  sorry
+  apply le_antisymm
+  · apply sup_le
+    · apply sup_le
+      · exact le_sup_left
+      · calc
+        y ≤ y ⊔ z := le_sup_left
+        _ ≤ x ⊔ (y ⊔ z) := le_sup_right
+    · calc
+      z ≤ y ⊔ z := le_sup_right
+      _ ≤ x ⊔ (y ⊔ z) := le_sup_right
+  · apply sup_le
+    · calc
+        x ≤ x ⊔ y := le_sup_left
+        _ ≤ (x ⊔ y) ⊔ z := le_sup_left
+    · apply sup_le
+      · calc
+        y ≤ x ⊔ y := le_sup_right
+        _ ≤ x ⊔ y ⊔ z := le_sup_left
+      · exact le_sup_right
 
 theorem absorb1 : x ⊓ (x ⊔ y) = x := by
-  sorry
+  apply le_antisymm
+  · exact inf_le_left
+  · apply le_inf
+    · exact le_refl x
+    · exact le_sup_left
 
 theorem absorb2 : x ⊔ x ⊓ y = x := by
-  sorry
+  apply le_antisymm
+  · apply sup_le
+    · exact le_refl x
+    · exact inf_le_left
+  · exact le_sup_left
 
 end
 
@@ -100,10 +126,64 @@ variable {α : Type*} [Lattice α]
 variable (a b c : α)
 
 example (h : ∀ x y z : α, x ⊓ (y ⊔ z) = x ⊓ y ⊔ x ⊓ z) : a ⊔ b ⊓ c = (a ⊔ b) ⊓ (a ⊔ c) := by
-  sorry
+  apply le_antisymm
+  · apply le_inf
+    · apply sup_le
+      · exact le_sup_left
+      · calc
+        b ⊓ c ≤ b := inf_le_left
+        _ ≤ a ⊔ b := le_sup_right
+    · apply sup_le
+      · exact le_sup_left
+      · calc
+        b ⊓ c ≤ c := inf_le_right
+        _ ≤ a ⊔ c := le_sup_right
+  · have t: (a ⊓ b) ⊔ (c ⊓ b) ≤ a ⊔ (b ⊓ c) := by
+      apply sup_le
+      · calc
+        a ⊓ b ≤ a := inf_le_left
+        _ ≤ a ⊔ (b ⊓ c) := le_sup_left
+      · rw [inf_comm]
+        exact le_sup_right
+    nth_rw 1 [inf_comm] at t
+    nth_rw 2 [inf_comm] at t
+    rw [← h] at t
+    rw [inf_comm] at t
+
+    rw [inf_comm]
+    rw [h]
+    rw [inf_comm]
+    rw [inf_sup_self]
+    apply sup_le
+    · exact le_sup_left
+    · exact t
 
 example (h : ∀ x y z : α, x ⊔ y ⊓ z = (x ⊔ y) ⊓ (x ⊔ z)) : a ⊓ (b ⊔ c) = a ⊓ b ⊔ a ⊓ c := by
-  sorry
+  apply le_antisymm
+  · rw [h]
+    nth_rw 2 [sup_comm]
+    rw [sup_inf_self]
+    apply le_inf
+    · exact inf_le_left
+    · nth_rw 2 [sup_comm]
+      rw [h]
+      rw [sup_comm]
+      apply le_inf
+      · calc
+        a ⊓ (c ⊔ b) ≤ a := inf_le_left
+        _ ≤ c ⊔ a := le_sup_right
+      · exact inf_le_right
+  · apply sup_le
+    · apply le_inf
+      · exact inf_le_left
+      · calc
+        a ⊓ b ≤ b := inf_le_right
+        _ ≤ b ⊔ c := le_sup_left
+    · apply le_inf
+      · exact inf_le_left
+      · calc
+        a ⊓ c ≤ c := inf_le_right
+        _ ≤ b ⊔ c := le_sup_right
 
 end
 
@@ -117,13 +197,25 @@ variable (a b c : R)
 #check (mul_nonneg : 0 ≤ a → 0 ≤ b → 0 ≤ a * b)
 
 example (h : a ≤ b) : 0 ≤ b - a := by
-  sorry
+  have t: -a + a ≤ -a + b := add_le_add_left h (-a)
+  rw [add_comm, add_neg_self] at t
+  rw [add_comm, ← sub_eq_add_neg] at t
+  exact t
 
 example (h: 0 ≤ b - a) : a ≤ b := by
-  sorry
+  have t: a + 0 ≤ a + (b - a) := add_le_add_left h a
+  rw [add_zero, add_sub] at t
+  rw [add_comm, ← add_sub, sub_self, add_zero] at t
+  exact t
 
 example (h : a ≤ b) (h' : 0 ≤ c) : a * c ≤ b * c := by
-  sorry
+  have t₁-a + a ≤ -a + b := add_le_add_left h (-a)
+  rw [add_comm, add_neg_self] at t
+  rw [add_comm, ← sub_eq_add_neg] at t
+
+
+
+
 
 end
 
@@ -136,6 +228,12 @@ variable (x y z : X)
 #check (dist_triangle x y z : dist x z ≤ dist x y + dist y z)
 
 example (x y : X) : 0 ≤ dist x y := by
-  sorry
+  apply nonneg_of_mul_nonneg_left
+  calc
+    0 = dist x x := by rw [dist_self x]
+    _ ≤ dist x y + dist y x := dist_triangle x y x
+    _ ≤ dist x y + dist x y := by rw [dist_comm]
+    _ = (dist x y) * 2 := by rw [← two_mul, mul_comm]
+  exact two_pos
 
 end
