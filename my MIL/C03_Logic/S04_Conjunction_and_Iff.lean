@@ -63,8 +63,12 @@ example {x y : ℝ} (h : x ≤ y ∧ x ≠ y) : ¬y ≤ x := by
 example {x y : ℝ} (h : x ≤ y ∧ x ≠ y) : ¬y ≤ x :=
   fun h' ↦ h.right (le_antisymm h.left h')
 
-example {m n : ℕ} (h : m ∣ n ∧ m ≠ n) : m ∣ n ∧ ¬n ∣ m :=
-  sorry
+example {m n : ℕ} (h : m ∣ n ∧ m ≠ n) : m ∣ n ∧ ¬n ∣ m := by
+  have t: ¬ (n ∣ m) := by
+    intro ndm
+    apply h.2
+    exact dvd_antisymm h.1 ndm
+  exact ⟨h.1, t⟩
 
 example : ∃ x : ℝ, 2 < x ∧ x < 4 :=
   ⟨5 / 2, by norm_num, by norm_num⟩
@@ -101,15 +105,37 @@ example {x y : ℝ} (h : x ≤ y) : ¬y ≤ x ↔ x ≠ y := by
 example {x y : ℝ} (h : x ≤ y) : ¬y ≤ x ↔ x ≠ y :=
   ⟨fun h₀ h₁ ↦ h₀ (by rw [h₁]), fun h₀ h₁ ↦ h₀ (le_antisymm h h₁)⟩
 
-example {x y : ℝ} : x ≤ y ∧ ¬y ≤ x ↔ x ≤ y ∧ x ≠ y :=
-  sorry
+example {x y : ℝ} : x ≤ y ∧ ¬y ≤ x ↔ x ≤ y ∧ x ≠ y := by
+  constructor
+  · intro ⟨h₁, h₂⟩
+    use h₁
+    intro t
+    rw [t] at h₂
+    exact h₂ (le_refl y)
+  · intro ⟨h₁, h₂⟩
+    use h₁
+    intro t
+    exact h₂ (le_antisymm h₁ t)
 
 theorem aux {x y : ℝ} (h : x ^ 2 + y ^ 2 = 0) : x = 0 :=
-  have h' : x ^ 2 = 0 := by sorry
+  have h' : x ^ 2 = 0 := by
+    apply le_antisymm
+    · apply (add_le_add_iff_right (y ^ 2)).1
+      rw [h, zero_add]
+      exact pow_two_nonneg y
+    · exact pow_two_nonneg x
   pow_eq_zero h'
 
-example (x y : ℝ) : x ^ 2 + y ^ 2 = 0 ↔ x = 0 ∧ y = 0 :=
-  sorry
+example (x y : ℝ) : x ^ 2 + y ^ 2 = 0 ↔ x = 0 ∧ y = 0 := by
+  constructor
+  · intro h
+    have t₁: x = 0 := aux h
+    rw [add_comm] at h
+    have t₂: y = 0 := aux h
+    exact ⟨t₁, t₂⟩
+  · intro ⟨h₁, h₂⟩
+    rw [h₁, h₂]
+    ring
 
 section
 
@@ -130,7 +156,9 @@ theorem not_monotone_iff {f : ℝ → ℝ} : ¬Monotone f ↔ ∃ x y, x ≤ y �
   rfl
 
 example : ¬Monotone fun x : ℝ ↦ -x := by
-  sorry
+  rw [not_monotone_iff]
+  use 0, 1
+  norm_num
 
 section
 variable {α : Type*} [PartialOrder α]
@@ -138,7 +166,16 @@ variable (a b : α)
 
 example : a < b ↔ a ≤ b ∧ a ≠ b := by
   rw [lt_iff_le_not_le]
-  sorry
+  constructor
+  · intro ⟨h₁, h₂⟩
+    use h₁
+    intro t
+    rw [t] at h₂
+    exact h₂ (le_refl b)
+  · intro ⟨h₁, h₂⟩
+    use h₁
+    intro t
+    exact h₂ (le_antisymm h₁ t)
 
 end
 
@@ -148,10 +185,14 @@ variable (a b c : α)
 
 example : ¬a < a := by
   rw [lt_iff_le_not_le]
-  sorry
+  push_neg
+  exact fun (h: a ≤ a) ↦ h
 
 example : a < b → b < c → a < c := by
   simp only [lt_iff_le_not_le]
-  sorry
+  intro ⟨h₁, _⟩ ⟨h₃, h₄⟩
+  use le_trans h₁ h₃
+  intro t
+  exact h₄ (le_trans t h₁)
 
 end
