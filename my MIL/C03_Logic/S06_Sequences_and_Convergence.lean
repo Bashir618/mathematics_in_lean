@@ -35,7 +35,19 @@ theorem convergesTo_add {s t : ℕ → ℝ} {a b : ℝ}
   rcases cs (ε / 2) ε2pos with ⟨Ns, hs⟩
   rcases ct (ε / 2) ε2pos with ⟨Nt, ht⟩
   use max Ns Nt
-  sorry
+  intro n nNsNt
+  simp at nNsNt
+  rw [add_sub_add_comm]
+  calc
+    |(s n - a) + (t n - b)| ≤ |s n - a| + |t n - b| := abs_add (s n - a) (t n - b)
+    _ < ε / 2 + |t n - b| := add_lt_add_right (hs n nNsNt.1) |t n - b|
+    _ < ε / 2 + ε / 2 := add_lt_add_left (ht n nNsNt.2) (ε / 2)
+    _ = ε 
+
+
+
+
+
 
 theorem convergesTo_mul_const {s : ℕ → ℝ} {a : ℝ} (c : ℝ) (cs : ConvergesTo s a) :
     ConvergesTo (fun n ↦ c * s n) (c * a) := by
@@ -100,4 +112,3 @@ def ConvergesTo' (s : α → ℝ) (a : ℝ) :=
   ∀ ε > 0, ∃ N, ∀ n ≥ N, |s n - a| < ε
 
 end
-
